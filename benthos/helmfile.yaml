@@ -4,19 +4,18 @@
 ---
 repositories:
 - name: benthos
-  url: https://benthosdev.github.io/benthos-helm-chart/
+  url: https://benthosdev.github.io/charts/
 
 ---
 environments:
   default:
     values:
-      - textsynth_sidecar: false
-      - textsynth_api_endpoint: http://textsynth:8020/v1/engines/mistral_7B_q4/completions
+      - ollama_sidecar: false
+      - ollama_api_endpoint: http://ollama:11434/api/generate
   sidecar:
     values:
-      - textsynth_sidecar: true
-      - textsynth_api_endpoint: http://localhost:8020/v1/engines/mistral_7B_q4/completions
-
+      - ollama_sidecar: true
+      - ollama_api_endpoint: http://localhost:11434/api/generate
 ---
 
 # Build the AMQP connection URL used in producer and consumer
@@ -68,8 +67,8 @@ releases:
   - name: config.input.amqp_0_9.urls[0]
     value: {{ $amqpurl }}
   - name: config.pipeline.processors[0].branch.processors[0].http.url
-    value: {{ .Environment.Values.textsynth_api_endpoint }}
-  {{ if .Environment.Values.textsynth_sidecar }}
+    value: {{ .Environment.Values.ollama_api_endpoint }}
+  {{ if .Environment.Values.ollama_sidecar }}
   strategicMergePatches:
     - apiVersion: apps/v1
       kind: Deployment
@@ -79,29 +78,74 @@ releases:
         template:
           spec:
             volumes:
-            - name: cache
+            - name: ollama
               hostPath:
-                path: /opt/textsynth
+                path: /opt/ollama
                 type: DirectoryOrCreate
             containers:
-            - image: jpetazzo/textsynth
-              name: textsynth
+            - image: ollama/ollama
+              name: ollama
+              env:
+              - name: OLLAMA_MAX_QUEUE
+                valueFrom:
+                  configMapKeyRef:
+                    name: ollama
+                    key: queue
               volumeMounts:
-              - name: cache
-                mountPath: /opt/textsynth
+              - name: ollama
+                mountPath: /root/.ollama
               readinessProbe:
                 httpGet:
-                  port: 8020
+                  port: 11434
               resources:
                 requests:
-                  memory: 7G
-                  cpu: 2.5
+                  cpu: 3
                 limits:
-                  memory: 7G
-                  cpu: 64
+                  cpu: 6
+            - image: alpine/httpie
+              name: pull-model
+              resources:
+                requests:
+                  cpu: 0.01
+                limits:
+                  cpu: 1
+              env:
+              - name: MODEL
+                valueFrom:
+                  configMapKeyRef:
+                    name: ollama
+                    key: model
+              command:
+              - sh
+              - -c
+              - |
+                set -e
+                echo -n $(MODEL) > /model
+                http -I --check-status http://localhost:11434/api/pull name=@/model
+                exec sleep infinity
+              readinessProbe:
+                # We don't need to hit the API endpoint every 10 seconds.
+                # However, we increase the timeout, because ollama sometimes
+                # takes a couple of seconds to reply, which causes the probe
+                # to fail (the default timeout is 1 second).
+                periodSeconds: 60
+                timeoutSeconds: 10
+                successThreshold: 1
+                failureThreshold: 1
+                exec:
+                  command:
+                  - http
+                  - -I
+                  - --check-status
+                  # Use "show" to just check if model has been pulled successfully.
+                  #- name=@/model
+                  #- http://localhost:11434/api/show
+                  # Or use "generate" with an empty payload to force ollama to keep the model loaded in RAM.
+                  - http://localhost:11434/api/generate
+                  - model=@/model
   {{ end }}
 
-{{ if .Environment.Values.textsynth_sidecar }}
+{{ if .Environment.Values.ollama_sidecar }}
 - name: keda-autoscaler
   chart: ./keda
   strategicMergePatches:

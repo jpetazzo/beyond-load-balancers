@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ollama
+  name: ollama
+spec:
+  ports:
+  - name: "11434"
+    port: 11434
+    protocol: TCP
+    targetPort: 11434
+  selector:
+    app: ollama
+  type: ClusterIP

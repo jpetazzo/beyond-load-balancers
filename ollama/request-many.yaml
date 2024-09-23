@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: request-many-
+spec:
+  template:
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          set -e
+          apk add hey
+          hey -n 10 -c 10 -t 60 -m POST \
+              -d '{"model": "$(MODEL)", "prompt": "$(PROMPT)}' \
+              http://ollama:11434/api/generate
+        env:
+        - name: PROMPT
+          valueFrom:
+            configMapKeyRef:
+              name: ollama
+              key: prompt
+        - name: MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: ollama
+              key: model
+        image: alpine
+        name: client
+      restartPolicy: Never

@@ -15,17 +15,23 @@ config:
   pipeline:
     processors:
       - branch:
+          #request_map: |
+          #  root.prompt = this.prompt
+          #  root.stop = "\n"
+          #  root.temperature = 0.8
           request_map: |
+            root.model = "qwen2:1.5b"
             root.prompt = this.prompt
-            root.stop = "\n"
-            root.temperature = 0.8
+            root.stream = false
           processors:
             - http:
-                url: http://SERVICE:PORT/v1/engines/MODEL/completions
+                url: http://SERVICE:PORT/URL...
                 verb: POST
                 timeout: 300s
+          #result_map: |
+          #  root.completion = this.text
           result_map: |
-            root.completion = this.text
+            root.completion = this.response
 
   output:
     label: insert_db

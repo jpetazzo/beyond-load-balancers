@@ -1,3 +1,7 @@
+# Note: this YAML isn't intended to be used "as-is".
+# It is meant to be patched with the correct values
+# (for instance with the helmfile that should be
+# located in the parent directory).
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:

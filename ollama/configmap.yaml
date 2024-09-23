@@ -1,0 +1,8 @@
+apiVersion: v1
+data:
+  model: qwen2:1.5b
+  prompt: "If you visit Paris, I suggest that you"
+  queue: "4"
+kind: ConfigMap
+metadata:
+  name: ollama

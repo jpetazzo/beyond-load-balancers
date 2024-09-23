@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: request-one-
+spec:
+  template:
+    spec:
+      containers:
+      - command:
+        - http
+        - -I
+        - --check-status
+        - http://ollama:11434/api/generate
+        - model=$(MODEL)
+        - prompt=$(PROMPT)
+        env:
+        - name: MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: ollama
+              key: model
+        - name: PROMPT
+          valueFrom:
+            configMapKeyRef:
+              name: ollama
+              key: prompt
+        image: alpine/httpie
+        name: client
+      restartPolicy: Never

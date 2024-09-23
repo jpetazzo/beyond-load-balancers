@@ -1,3 +1,27 @@
+**Initialize helmfile plugins:**
+
+```
+helmfile init --force
+```
+
+**If needed, enable missing components:**
+
+If your Kubernetes cluster *does not* have a storage class,
+you can request the installation of the rancher local path provisioner
+by setting this environment variable:
+
+```
+export INSTALL_LOCAL_PATH_PROVISIONER=yes
+```
+
+Likewise, if your cluster *does not* have metrics server
+(`kubectl top nodes` says that the metrics API is not available),
+you can request its installation by settings this variable:
+
+```
+export INSTALL_METRICS_SERVER=yes
+```
+
 **Install operators:**
 
 ```
@@ -12,13 +36,13 @@ kubectl create namespace $NAMESPACE
 kns $NAMESPACE
 ```
 
-**Deploy database, message queue, and textsynth:**
+**Deploy database, message queue, and ollama:**
 
 ```
 kubectl apply -f postgres
 kubectl apply -f rabbitmq
-kubectl apply -f textsynth
-# Ignore the warning about the Compose file :)
+kubectl apply -f ollama
+# Ignore the warning about the names that cannot be generated with apply :)
 ```
 
 **Run Benthos processors:**
@@ -26,6 +50,16 @@ kubectl apply -f textsynth
 ```
 helmfile sync -f benthos/helmfile.yaml -n $NAMESPACE
 ```
+
+**Install dashboard:**
+
+```
+helmfile sync -e dashboard
+kubectl apply -f grafana
+```
+
+You can then open grafana (default login password: `admin` / `prom-operator`)
+and the custom dashboard should be visible.
 
 **Check queue:**
 
@@ -39,10 +73,10 @@ kubectl exec mq-server-0 -- rabbitmqctl list_queues
 kubectl cnpg psql db -- messages -c "select * from messages;"
 ```
 
-**Scale up textsynth and consumer:**
+**Scale up ollama and consumer:**
 
 ```
-kubectl scale deployment consumer,textsynth --replicas 100
+kubectl scale deployment consumer,ollama --replicas 100
 ```
 
 This should trigger node autoscaling. It will take a few
@@ -50,26 +84,26 @@ minutes for the new nodes to come up. Wait a bit. Eventually,
 the queue should start to come down. Yay!
 
 But if we look with `kubectl top pods`, many of these pods
-are idle. We have overprovisioned textsynth. Let's try to
+are idle. We have overprovisioned ollama. Let's try to
 do better with autoscaling.
 
-**Enable autoscaling on textsynth:**
+**Enable autoscaling on ollama:**
 
 ```
-kubectl autoscale deployment textsynth --max=100
+kubectl autoscale deployment ollama --max=100
 ```
 
-Now we wait a bit. After a few minutes, textsynth should be
+Now we wait a bit. After a few minutes, ollama should be
 scaled down until we reach a kind of "cruise speed" where we
-have "just the right amount" of textsynth pods to handle the
+have "just the right amount" of ollama pods to handle the
 load.
 
 But... If we look with `kubectl top pods` again, we'll see
 that some pods are still idle. This is because of unfair load
 balancing. We're going to change that by having exactly
-one textsynth pod per benthos consumer, and have each benthos
-consumer talk to its "own" textsynth. We'll achieve that by
-running textsynth as a sidecar right next to the benthos
+one ollama pod per benthos consumer, and have each benthos
+consumer talk to its "own" ollama. We'll achieve that by
+running ollama as a sidecar right next to the benthos
 consumer.
 
 **Switch to sidecar architecture and KEDA autoscaler:**

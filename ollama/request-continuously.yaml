@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: client
+  name: client
+spec:
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+    spec:
+      containers:
+      - command:
+        - sh
+        - -c
+        - |
+          set -e
+          while true; do 
+            /bin/time -o /tmp/response.time -f "%e" \
+                 curl --fail --silent --show-error \
+                 http://ollama:11434/api/generate \
+                 -d '{"model": "$(MODEL)", "prompt": "$(PROMPT)", "stream": false}' \
+                 >/tmp/response.json
+            #jq -r '"Server processing time: " + (.total_duration / 1000000 | round / 1000 | tostring)' \
+            #   </tmp/response.json
+            #echo "Response: $(jq -r .response </tmp/response.json | head -n1 )"
+            printf "Request took %s seconds. Output: %s...\n" \
+                "$(cat /tmp/response.time)" \
+                "$(jq -r .response </tmp/response.json | head -n1 | head -c40)" \
+                #
+            rm /tmp/response.json /tmp/response.time
+          done
+        env:
+        - name: MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: ollama
+              key: model
+        - name: PROMPT
+          valueFrom:
+            configMapKeyRef:
+              name: ollama
+              key: prompt
+        image: nixery.dev/shell/curl/jq/time
+        name: client
+      terminationGracePeriodSeconds: 1

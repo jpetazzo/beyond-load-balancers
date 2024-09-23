@@ -18,7 +18,7 @@ environments:
   dashboard:
 ---
 releases:
-{{ if false }}
+{{ if env "INSTALL_LOCAL_PATH_PROVISIONER" }}
 - name: local-path-provisioner
   namespace: local-path-provisioner
   chart: local-path-provisioner/local-path-provisioner
@@ -81,7 +81,7 @@ releases:
 - name: cnpg
   namespace: cnpg-system
   chart: cnpg/cloudnative-pg
-{{ if false }}
+{{ if env "INSTALL_METRIC_SERVER" }}
 - name: metrics-server
   namespace: kube-system
   chart: metrics-server/metrics-server
