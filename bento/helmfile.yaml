@@ -3,8 +3,8 @@
 {{ end }}
 ---
 repositories:
-- name: benthos
-  url: https://benthosdev.github.io/charts/
+- name: bento
+  url: https://warpstreamlabs.github.io/bento-helm-chart
 
 ---
 environments:
@@ -27,11 +27,11 @@ environments:
 
 releases:
 
-- name: benthos-generator
-  chart: benthos/benthos
-  version: 2.1.1
+- name: bento-generator
+  chart: bento/bento
+  version: 0.1.0
   values:
-    - ./values-benthos-generator.yml
+    - ./values-bento-generator.yml
     - extraVolumes:
         - name: data
     - extraVolumeMounts:
@@ -49,18 +49,18 @@ releases:
             - name: data
               mountPath: /data
 
-- name: benthos-api
-  chart: benthos/benthos
-  version: 2.1.1
-  values: [ ./values-benthos-api.yml ]
+- name: bento-api
+  chart: bento/bento
+  version: 0.1.0
+  values: [ ./values-bento-api.yml ]
   set:
   - name: config.output.amqp_0_9.urls[0]
     value: {{ $amqpurl }}
 
-- name: benthos-consumer
-  chart: benthos/benthos
-  version: 2.1.1
-  values: [ ./values-benthos-consumer.yml ]
+- name: bento-consumer
+  chart: bento/bento
+  version: 0.1.0
+  values: [ ./values-bento-consumer.yml ]
   set:
   - name: config.output.sql_insert.dsn
     value: {{ fetchSecretValue (printf "secretref+k8s://v1/Secret/%s/db-app/uri" .Namespace) }}
@@ -73,7 +73,7 @@ releases:
     - apiVersion: apps/v1
       kind: Deployment
       metadata:
-        name: benthos-consumer
+        name: bento-consumer
       spec:
         template:
           spec:
@@ -152,7 +152,7 @@ releases:
     - apiVersion: keda.sh/v1alpha1
       kind: ScaledObject
       metadata:
-        name: benthos-consumer
+        name: bento-consumer
         namespace: {{ .Namespace }}
       spec:
         pollingInterval: 30

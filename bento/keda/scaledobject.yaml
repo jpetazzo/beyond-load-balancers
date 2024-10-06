@@ -5,9 +5,9 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: benthos-consumer
+  name: bento-consumer
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
-    name: benthos-consumer
+    name: bento-consumer
     kind: Deployment

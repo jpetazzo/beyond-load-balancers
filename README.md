@@ -45,10 +45,10 @@ kubectl apply -f ollama
 # Ignore the warning about the names that cannot be generated with apply :)
 ```
 
-**Run Benthos processors:**
+**Run Bento processors:**
 
 ```
-helmfile sync -f benthos/helmfile.yaml -n $NAMESPACE
+helmfile sync -f bento/helmfile.yaml -n $NAMESPACE
 ```
 
 **Install dashboard:**
@@ -101,15 +101,15 @@ load.
 But... If we look with `kubectl top pods` again, we'll see
 that some pods are still idle. This is because of unfair load
 balancing. We're going to change that by having exactly
-one ollama pod per benthos consumer, and have each benthos
+one ollama pod per bento consumer, and have each bento
 consumer talk to its "own" ollama. We'll achieve that by
-running ollama as a sidecar right next to the benthos
+running ollama as a sidecar right next to the bento
 consumer.
 
 **Switch to sidecar architecture and KEDA autoscaler:**
 
 ```
-helmfile sync -f benthos/helmfile.yaml -n $NAMESPACE -e sidecar
+helmfile sync -f bento/helmfile.yaml -n $NAMESPACE -e sidecar
 ```
 
 This will scale according to the queue depth, and it should
@@ -126,7 +126,7 @@ After a while the number of nodes should also go down on its own.
 **Scale to zero:**
 
 ```
-kubectl scale deployment benthos-generator --replicas=0
+kubectl scale deployment bento-generator --replicas=0
 ```
 
 If we shutdown the generator, eventually, the queue will

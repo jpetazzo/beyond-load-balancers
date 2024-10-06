@@ -21,7 +21,7 @@ config:
 
   output:
     http_client:
-      url: "http://benthos-api/post"
+      url: "http://bento-api/post"
       verb: POST
       headers:
         Content-Type: application/json

@@ -1,5 +1,5 @@
 ##############################################################
-## Run on a laptop with benthos cli to push on our api
+## Run on a laptop with bento cli to push on our api
 ##############################################################
 
 http:
@@ -28,5 +28,5 @@ http:
       headers:
         Content-Type: application/json
 
-##### This is what benthos post on the api service
+##### This is what bento post on the api service
 #curl -XPOST http://127.0.0.1:8080/api/v2/register-orders      -H 'Content-Type: application/json' -d '{"user": {"id": "xavki","location": "paris"},"priority": "1", "orders": [{"uuid": "Caen"}, {"uuid": "Paris"}]}'
