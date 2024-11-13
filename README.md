@@ -4,23 +4,24 @@
 helmfile init --force
 ```
 
-**If needed, enable missing components:**
+**Copy the default configuration:**
+
+```
+cp config.example.yaml config.yaml
+```
+
+**Edit the configuration (if needed):**
 
 If your Kubernetes cluster *does not* have a storage class,
 you can request the installation of the rancher local path provisioner
-by setting this environment variable:
-
-```
-export INSTALL_LOCAL_PATH_PROVISIONER=yes
-```
+with the parameter `INSTALL_LOCAL_PATH_PROVISIONER`.
 
 Likewise, if your cluster *does not* have metrics server
 (`kubectl top nodes` says that the metrics API is not available),
-you can request its installation by settings this variable:
+you can request its installation by setting `INSTALL_METRICS_SERVER`.
 
-```
-export INSTALL_METRICS_SERVER=yes
-```
+If you'd like to easily access Prometheus and Grafana, you can
+set `EXPOSE_PROMETHEUS_AND_GRAFANA_WITH_NODEPORTS`.
 
 **Install operators:**
 

@@ -15,10 +15,14 @@ repositories:
 ---
 environments:
   default:
+    values:
+    - config.yaml
   dashboard:
+    values:
+    - config.yaml
 ---
 releases:
-{{ if env "INSTALL_LOCAL_PATH_PROVISIONER" }}
+{{ if .Values.INSTALL_LOCAL_PATH_PROVISIONER }}
 - name: local-path-provisioner
   namespace: local-path-provisioner
   chart: local-path-provisioner/local-path-provisioner
@@ -62,9 +66,10 @@ releases:
               sslmode: 'disable'
               postgresVersion: 15 
         {{ end }}
-
     - prometheus:
         prometheusSpec:
+          podMonitorSelectorNilUsesHelmValues: false
+          serviceMonitorSelectorNilUsesHelmValues: false
           resources:
             requests:
               cpu: 100m # OpenAPI schema requires integer or string
@@ -72,6 +77,14 @@ releases:
             limits:
               cpu: 1
               memory: 4G
+    {{ if .Values.EXPOSE_PROMETHEUS_AND_GRAFANA_WITH_NODEPORTS }}
+    - grafana:
+        service:
+          type: NodePort
+      prometheus:
+        service:
+          type: NodePort
+    {{ end }}
 - name: keda
   namespace: keda-system
   chart: kedacore/keda
@@ -81,7 +94,7 @@ releases:
 - name: cnpg
   namespace: cnpg-system
   chart: cnpg/cloudnative-pg
-{{ if env "INSTALL_METRICS_SERVER" }}
+{{ if .Values.INSTALL_METRICS_SERVER }}
 - name: metrics-server
   namespace: kube-system
   chart: metrics-server/metrics-server
