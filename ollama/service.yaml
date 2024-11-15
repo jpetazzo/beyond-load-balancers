@@ -9,7 +9,7 @@ spec:
   - name: "11434"
     port: 11434
     protocol: TCP
-    targetPort: 11434
+    targetPort: haproxy
   selector:
     app: ollama
   type: ClusterIP

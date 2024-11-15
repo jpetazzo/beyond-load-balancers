@@ -19,6 +19,9 @@ spec:
         hostPath:
           path: /opt/ollama
           type: DirectoryOrCreate
+      - name: haproxy
+        configMap:
+          name: haproxy
       containers:
       - image: ollama/ollama
         name: ollama
@@ -28,55 +31,53 @@ spec:
             configMapKeyRef:
               name: ollama
               key: queue
-        volumeMounts:
-        - name: ollama
-          mountPath: /root/.ollama
-        readinessProbe:
-          httpGet:
-            port: 11434
-        resources:
-          requests:
-            cpu: 3
-          limits: 
-            cpu: 6
-      - image: alpine/httpie
-        name: pull-model
-        resources:
-          requests:
-            cpu: 0.01
-          limits:
-            cpu: 1
-        env:
         - name: MODEL
           valueFrom:
             configMapKeyRef:
               name: ollama
               key: model
-        command:
-        - sh
-        - -c
-        - |
-          set -e
-          echo -n $(MODEL) > /model
-          http -I --check-status http://localhost:11434/api/pull name=@/model
-          exec sleep infinity
+        volumeMounts:
+        - name: ollama
+          mountPath: /root/.ollama
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - ollama pull $MODEL
+        livenessProbe:
+          httpGet:
+            port: 11434
         readinessProbe:
-          # We don't need to hit the API endpoint every 10 seconds.
-          # However, we increase the timeout, because ollama sometimes
-          # takes a couple of seconds to reply, which causes the probe
-          # to fail (the default timeout is 1 second).
-          periodSeconds: 60
-          timeoutSeconds: 10
-          successThreshold: 1
-          failureThreshold: 1
           exec:
             command:
-            - http
-            - -I
-            - --check-status
-            # Use "show" to just check if model has been pulled successfully.
-            #- name=@/model
-            #- http://localhost:11434/api/show
-            # Or use "generate" with an empty payload to force ollama to keep the model loaded in RAM.
-            - http://localhost:11434/api/generate
-            - model=@/model
+              - /bin/sh
+              - -c
+              - ollama show $MODEL
+        ports:
+        - name: ollama
+          containerPort: 11434
+        resources:
+          requests:
+            cpu: 1
+          limits: 
+            cpu: 2
+      - image: haproxy:3.0
+        name: haproxy
+        volumeMounts:
+        - name: haproxy
+          mountPath: /usr/local/etc/haproxy
+        readinessProbe:
+          httpGet:
+            port: 9000
+        ports:
+        - name: haproxy
+          containerPort: 8000
+        - name: metrics
+          containerPort: 9000
+        resources:
+          requests:
+            cpu: 0.05
+          limits:
+            cpu: 1

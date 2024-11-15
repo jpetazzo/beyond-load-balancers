@@ -13,7 +13,7 @@ spec:
           set -e
           apk add hey
           hey -n 10 -c 10 -t 60 -m POST \
-              -d '{"model": "$(MODEL)", "prompt": "$(PROMPT)}' \
+              -d '{"model": "$(MODEL)", "prompt": "$(PROMPT)"}' \
               http://ollama:11434/api/generate
         env:
         - name: PROMPT
