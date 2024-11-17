@@ -58,11 +58,14 @@ spec:
         ports:
         - name: ollama
           containerPort: 11434
-        resources:
-          requests:
-            cpu: 1
-          limits: 
-            cpu: 2
+        # These are commented out for learning purposes
+        # (so that using this Deployment manifest as-is
+        # results in resource contention).
+        #resources:
+        #  requests:
+        #    cpu: 1
+        #  limits: 
+        #    cpu: 2
       - image: haproxy:3.0
         name: haproxy
         volumeMounts:

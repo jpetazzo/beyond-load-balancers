@@ -46,6 +46,19 @@ kubectl apply -f ollama
 # Ignore the warning about the names that cannot be generated with apply :)
 ```
 
+**Adjust resource requests and limits for ollama:**
+
+```
+kubectl set resources deployment ollama \
+  --requests=cpu=1.5,memory=2G \
+  --limits=cpu=3,memory=2G
+```
+
+These values should be fine if you're using the `qwen2:1.5b` model
+on nodes with 4-8 cores. If you use a different model, adjust the
+amount of memory; if you are using bigger nodes, feel free to increase
+CPU requests and limits, too.
+
 **Run Bento processors:**
 
 ```
