@@ -1,0 +1,33 @@
+input:
+  redis_list:
+    url: redis://redis:6379
+    key: cities
+  processors:
+    - log:
+        message: "INPUT  ${! this.city }"
+pipeline:
+  processors:
+  - branch:
+      request_map: |
+        root.model = "qwen2:1.5b"
+        root.stream = false
+        root.prompt = (
+          "Who is the mayor of %s? ".format(this.city) +
+          "Just give the name by itself on a single line. " +
+          "If you don't know, don't say anything."
+          )
+      processors:
+        - http:
+            url: http://ollama:11434/api/generate
+            verb: POST
+            timeout: 300s
+      result_map: |
+        root.mayor = this.response
+output:
+  reject_errored:
+    redis_list:
+      url: redis://redis:6379
+      key: mayors
+    processors:
+      - log:
+          message: "OUTPUT ${! this.city }"
